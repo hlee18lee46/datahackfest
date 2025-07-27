@@ -3,9 +3,26 @@ import numpy as np
 import pandas as pd
 import pickle
 from flask_cors import CORS
+import google.generativeai as genai
+import os
+from dotenv import load_dotenv
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain.schema import SystemMessage, HumanMessage
+from pymongo import MongoClient
+
+
+from dotenv import load_dotenv
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
+
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+llm = ChatGoogleGenerativeAI(
+    model="gemini-1.5-flash",
+    google_api_key=GEMINI_API_KEY,
+)
 
 # Load model
 with open("heart_disease_model.pkl", "rb") as f:
@@ -30,6 +47,51 @@ def encode_input(data):
                 print(f"[Warning] Unknown value for {col}: '{value}' – defaulting to 0")
                 data[col] = 0  # Fallback to default
     return data
+
+@app.route('/api/gemini', methods=['POST'])
+def gemini_summary():
+    try:
+        data = request.get_json()
+        print("[DEBUG] Received JSON:", data)
+
+        # Dynamically construct prompt from patient data
+        patient_info = f"""
+Patient Details:
+- Age: {data.get('Age')}
+- Sex: {data.get('Sex')}
+- Chest Pain Type: {data.get('ChestPainType')}
+- Cholesterol: {data.get('Cholesterol')}
+- Resting BP: {data.get('RestingBP')}
+- FastingBS: {data.get('FastingBS')}
+- RestingECG: {data.get('RestingECG')}
+- MaxHR: {data.get('MaxHR')}
+- Exercise Angina: {data.get('ExerciseAngina')}
+- Oldpeak: {data.get('Oldpeak')}
+- ST Slope: {data.get('ST_Slope')}
+"""
+
+        prompt = f"""
+You are a medical assistant helping doctors evaluate heart disease risk.
+Given this patient's clinical data:
+
+{patient_info}
+
+Summarize the risk trends and suggest next steps in one short paragraph.
+"""
+
+        messages = [
+            SystemMessage(content="You are a clinical insights assistant trained to analyze patient heart risk data."),
+            HumanMessage(content=prompt)
+        ]
+
+        result = llm(messages)
+
+        return jsonify({'summary': result.content}), 200
+
+    except Exception as e:
+        print("[ERROR]", str(e))
+        return jsonify({'error': str(e)}), 500
+
 
 
 # Web form route (optional)
@@ -100,6 +162,7 @@ def predict():
         return jsonify({"error": "Prediction failed"}), 400
 
 
+
 # Allow all IPs to connect
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(use_reloader=False, host="0.0.0.0", port=5000, debug=True)

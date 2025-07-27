@@ -6,6 +6,10 @@ import PatientRecordsList from "@/components/patient-records-list"
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import dynamic from "next/dynamic"
+
+// Dynamically import the AI insights component (disable SSR for client-only behavior)
+const InsightsBox = dynamic(() => import("@/components/InsightsBox"), { ssr: false })
 
 export default async function RecordByIdPage({ params }: { params: { id: string } }) {
   const cookieStore = await cookies()
@@ -30,6 +34,11 @@ export default async function RecordByIdPage({ params }: { params: { id: string 
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <PatientRecordsList patientId={params.id} />
+
+        <section className="mt-8">
+          <h2 className="text-lg font-semibold mb-2">AI Insights</h2>
+          <InsightsBox patientId={params.id} />
+        </section>
       </main>
     </div>
   )

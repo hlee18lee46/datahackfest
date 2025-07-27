@@ -1,9 +1,10 @@
 import { redirect } from "next/navigation"
 import { cookies } from "next/headers"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, InsightsBox } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Heart, Users, LogOut } from "lucide-react"
+import { Sparkles, Heart, Users, LogOut } from "lucide-react"
 import Link from "next/link"
+import InsightsWrapper from "@/components/InsightsWrapper"
 
 export default async function Dashboard() {
   const cookieStore = await cookies()
@@ -85,6 +86,8 @@ export default async function Dashboard() {
     </Button>
   </CardContent>
 </Card>
+
+
 
         </div>
       </main>
